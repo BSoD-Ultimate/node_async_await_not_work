@@ -1,0 +1,11 @@
+{
+  "name": "hang",
+  "version": "0.0.0",
+  "description": "a cpp module which hangs Node.js async/await operations",
+  "main": "hang.js",
+  "private": true,
+  "gypfile": true,
+  "dependencies": {
+    "nan": "*"
+  }
+}
