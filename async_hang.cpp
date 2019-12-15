@@ -153,7 +153,7 @@ NAN_METHOD(testAsync)
             // This is wrong
             //Nan::Call(*callback, argc, argv.get());
 
-            // Don't directly call callback functions connected to a asynchronous operations
+            // Don't directly call callback functions connected to an asynchronous operation
             // In order to make sure the async context assigned to the callback function is correct, 
             // always use Nan::AsyncResource::runInAsyncScope instead of directly calling Nan::Call
             // according to the documentation https://github.com/nodejs/nan/blob/master/doc/node_misc.md
