@@ -47,7 +47,6 @@ private:
 
 class Foo
 {
-    friend class FooManager;
 private:
     Foo()
         : m_pAsync(std::make_unique<uvAsyncEvent>(this, uvAsyncCallback))
@@ -65,35 +64,6 @@ public:
 
 private:
     std::unique_ptr<uvAsyncEvent> m_pAsync;
-};
-
-// "Foo" Manager
-class FooManager
-{
-    FooManager()
-    {
-    }
-public:
-    ~FooManager()
-    {
-    }
-
-    static FooManager& GetInstance()
-    {
-        static FooManager m;
-        return m;
-    }
-
-    Foo* CreateFoo()
-    {
-        std::unique_ptr<Foo> pFoo(new Foo());
-        Foo* ret = pFoo.get();
-        m_createdInstances.insert(std::move(pFoo));
-        return ret;
-    }
-
-private:
-    std::set<std::unique_ptr<Foo>> m_createdInstances;
 };
 
 // a c++ class exported to Node.js which holds a "context like" object
@@ -114,7 +84,6 @@ public:
 
 private:
     Hang()
-        //: m_pFoo(FooManager::GetInstance().CreateFoo())
         : m_pAsync(std::make_unique<uvAsyncEvent>(this, uvAsyncCallback))
     {
     }
@@ -180,8 +149,16 @@ NAN_METHOD(testAsync)
             std::unique_ptr<v8::Local<v8::Value>[]> argv(new v8::Local<v8::Value>[argc]());
 
             argv[0] = Nan::New("async task complete").ToLocalChecked();
+            
+            // This is wrong
+            //Nan::Call(*callback, argc, argv.get());
 
-            Nan::Call(*callback, argc, argv.get());
+            // Don't directly call callback functions connected to a asynchronous operations
+            // In order to make sure the async context assigned to the callback function is correct, 
+            // always use Nan::AsyncResource::runInAsyncScope instead of directly calling Nan::Call
+            // according to the documentation https://github.com/nodejs/nan/blob/master/doc/node_misc.md
+            Nan::AsyncResource rs("asyncrc");
+            rs.runInAsyncScope(Nan::New<v8::Object>(), callback->GetFunction(), argc, argv.get());
         }
     };
 
